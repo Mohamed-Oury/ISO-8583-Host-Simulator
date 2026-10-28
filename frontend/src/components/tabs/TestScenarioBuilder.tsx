@@ -38,7 +38,7 @@ const DEFAULT_FORM: ScenarioFormState = {
 
 const PRESET_SCENARIOS: Array<{ label: string; config: Partial<ScenarioFormState> }> = [
   {
-    label: "Retrait GAB Valide (DE 39: 00)",
+    label: "🏧 Retrait GAB Valide (DE 39: 00)",
     config: {
       name: "Retrait GAB Compte Provisionné",
       channel: "ATM",
@@ -50,19 +50,19 @@ const PRESET_SCENARIOS: Array<{ label: string; config: Partial<ScenarioFormState
     },
   },
   {
-    label: "Solde Insuffisant (DE 39: 51)",
+    label: "❌ Solde Insuffisant (DE 39: 51)",
     config: {
       name: "Dépassement Solde Disponible",
       channel: "ATM",
       mti: "0200",
-      pan: "4000123456780005", // Solde faible (2000 XOF)
+      pan: "4000123456780005",
       amount: 500000,
       expected_de39: "51",
       pin: "1234",
     },
   },
   {
-    label: "Code PIN Incorrect (DE 39: 55)",
+    label: "🔒 Code PIN Incorrect (DE 39: 55)",
     config: {
       name: "Erreur Saisie PIN Client",
       channel: "POS",
@@ -70,11 +70,11 @@ const PRESET_SCENARIOS: Array<{ label: string; config: Partial<ScenarioFormState
       pan: "4000123456780001",
       amount: 15000,
       expected_de39: "55",
-      pin: "9999", // Mauvais PIN
+      pin: "9999",
     },
   },
   {
-    label: "Demande d'Autorisation (MTI 0100)",
+    label: "⛽ Pré-autorisation TPE (MTI 0100)",
     config: {
       name: "Pré-autorisation TPE Carburant",
       channel: "POS",
@@ -86,7 +86,7 @@ const PRESET_SCENARIOS: Array<{ label: string; config: Partial<ScenarioFormState
     },
   },
   {
-    label: "Annulation / Reversal (MTI 0400)",
+    label: "🔄 Extourne / Reversal (MTI 0400)",
     config: {
       name: "Extourne Timeout Distribution GAB",
       channel: "ATM",
@@ -186,319 +186,392 @@ export default function TestScenarioBuilder() {
   const failedCount = results.length - passedCount;
 
   return (
-    <div className="space-y-6">
-      {/* HEADER */}
-      <div className="rounded-xl border border-slate-700/60 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 p-6 shadow-xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="rounded bg-indigo-500/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-indigo-400 border border-indigo-500/30">
-                UAT & Certification
-              </span>
-              <span className="text-xs text-slate-400">Générateur Certifié de PV</span>
-            </div>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              <span>📋</span> Studio de Recette & PV d'Homologation
-            </h1>
-            <p className="mt-1 text-sm text-slate-300 max-w-3xl">
-              Configurez des plans de tests personnalisés, injectez des champs ISO 8583 spécifiques, comparez les codes retours
-              (DE 39) et générez un <strong>Procès-Verbal officiel d'homologation</strong> revêtu du visa d'ingénierie monétique.
-            </p>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      {/* HEADER PRINCIPAL */}
+      <div className="pane-header">
+        <div className="pane-header-main">
+          <div className="pane-title-row">
+            <span className="badge-chip highlight">UAT &amp; CERTIFICATION BANCAIRE</span>
+            <span className="badge-chip subtle">PLAN DE TESTS SUR-MESURE</span>
+            <span className="badge-chip success">VISA INGÉNIERIE MONÉTIQUE - CBS</span>
           </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setResults([])}
-              disabled={results.length === 0}
-              className="px-3 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 rounded border border-slate-700 transition disabled:opacity-40"
-            >
-              Effacer les Tests
-            </button>
-            <button
-              onClick={handleGeneratePv}
-              disabled={pvLoading || results.length === 0}
-              className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-lg shadow-emerald-600/30 transition disabled:opacity-40 flex items-center gap-2"
-            >
-              {pvLoading ? "Génération..." : "📄 Générer PV Officiel"}
-            </button>
-          </div>
+          <h2 className="pane-title">Studio de Recette &amp; PV d'Homologation Certifié</h2>
+          <p className="pane-subtitle">
+            Configurez et injectez des trames ISO 8583 personnalisées, comparez les codes retours (DE 39),
+            auditez les règles d'arbitrage et générez un <strong>Procès-Verbal officiel d'homologation</strong> revêtu de votre visa d'ingénieur.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={() => setResults([])}
+            disabled={results.length === 0}
+            className="btn btn-outline"
+            style={{ fontSize: "0.82rem" }}
+          >
+            Effacer les Tests
+          </button>
+          <button
+            type="button"
+            onClick={handleGeneratePv}
+            disabled={pvLoading || results.length === 0}
+            className="btn btn-primary btn-glow"
+            style={{ fontSize: "0.82rem", display: "flex", alignItems: "center", gap: "0.4rem" }}
+          >
+            <span>📄</span>
+            <span>{pvLoading ? "Génération..." : "Générer PV Officiel"}</span>
+          </button>
         </div>
       </div>
 
       {errorMsg && (
-        <div className="rounded-lg border border-red-500/40 bg-red-950/40 p-4 text-sm text-red-200 flex items-center gap-2">
+        <div style={{ padding: "0.75rem 1rem", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", color: "#991b1b", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <span>⚠️</span>
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* QUICK PRESETS */}
-      <div className="flex items-center gap-2 flex-wrap text-xs">
-        <span className="text-slate-400 font-semibold">Modèles de Tests Rapides :</span>
-        {PRESET_SCENARIOS.map((p, idx) => (
-          <button
-            key={idx}
-            onClick={() => applyPreset(p.config)}
-            className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
-          >
-            {p.label}
-          </button>
-        ))}
+      {/* MODÈLES DE TESTS RAPIDES */}
+      <div className="card" style={{ padding: "0.85rem 1.25rem", background: "linear-gradient(180deg, #fff1f2 0%, #ffffff 100%)", border: "1px solid rgba(125, 21, 56, 0.2)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
+          <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--burgundy)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <span>⚡</span>
+            <span>Modèles de Scénarios Préconfigurés :</span>
+          </div>
+          <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>
+            Cliquez pour charger automatiquement les paramètres et le code DE 39 attendu
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+          {PRESET_SCENARIOS.map((p, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => applyPreset(p.config)}
+              className="preset-btn"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* WORKSPACE: CONFIG FORM & RESULTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* FORM LEFT */}
-        <div className="lg:col-span-5 rounded-xl border border-slate-800 bg-slate-900/80 p-5 space-y-4">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-indigo-400 border-b border-slate-800 pb-2">
-            ⚙️ Paramètres du Scénario
-          </h2>
+      {/* WORKSPACE DEUX COLONNES */}
+      <div style={{ display: "grid", gridTemplateColumns: "1.05fr 1.35fr", gap: "1.25rem", alignItems: "start" }}>
+        {/* COLONNE GAUCHE : FORMULAIRE DU CAS DE TEST */}
+        <div className="card">
+          <div className="card-header">
+            <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-main)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <span>⚙️</span>
+              <span>Paramètres du Scénario d'Épreuve</span>
+            </h3>
+            <span className="tag">MTI {form.mti} • {form.channel}</span>
+          </div>
 
-          <div className="space-y-3 text-xs">
+          <div style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div>
-              <label className="block text-slate-400 mb-1">Nom / Référence du Test :</label>
+              <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                Nom / Intitulé du Scénario :
+              </label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full rounded border border-slate-700 bg-slate-950 p-2 text-white focus:border-indigo-500 focus:outline-none"
+                className="form-control"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
               <div>
-                <label className="block text-slate-400 mb-1">Canal Monétique :</label>
+                <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                  Canal Monétique :
+                </label>
                 <select
                   value={form.channel}
                   onChange={(e) => setForm({ ...form, channel: e.target.value })}
-                  className="w-full rounded border border-slate-700 bg-slate-950 p-2 text-white focus:border-indigo-500 focus:outline-none"
+                  className="form-control"
                 >
-                  <option value="ATM">GAB / ATM</option>
-                  <option value="POS">TPE / POS</option>
-                  <option value="ECOM">E-Commerce / WEB</option>
+                  <option value="ATM">🏧 GAB / Distributeur ATM</option>
+                  <option value="POS">💳 TPE / Terminal POS</option>
+                  <option value="ECOM">🌐 E-Commerce / Vente à Distance</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">MTI Requis :</label>
+                <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                  MTI ISO 8583 Requis :
+                </label>
                 <select
                   value={form.mti}
                   onChange={(e) => setForm({ ...form, mti: e.target.value })}
-                  className="w-full rounded border border-slate-700 bg-slate-950 p-2 font-mono text-emerald-400 focus:border-indigo-500 focus:outline-none"
+                  className="form-control"
+                  style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--burgundy)" }}
                 >
-                  <option value="0200">0200 - Demande d'Autorisation</option>
-                  <option value="0100">0100 - Demande de Pré-Autorisation</option>
-                  <option value="0400">0400 - Demande d'Extourne (Reversal)</option>
-                  <option value="0800">0800 - Echo Test Réseau</option>
+                  <option value="0200">0200 — Demande d'Autorisation</option>
+                  <option value="0100">0100 — Pré-autorisation (Hold)</option>
+                  <option value="0400">0400 — Annulation / Extourne</option>
+                  <option value="0800">0800 — Échange Réseau / Echo</option>
                 </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "0.75rem" }}>
               <div>
-                <label className="block text-slate-400 mb-1">Numéro de Carte (PAN) :</label>
+                <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                  Numéro de Carte (PAN) :
+                </label>
                 <input
                   type="text"
                   value={form.pan}
                   onChange={(e) => setForm({ ...form, pan: e.target.value })}
-                  className="w-full font-mono rounded border border-slate-700 bg-slate-950 p-2 text-white focus:border-indigo-500 focus:outline-none"
+                  className="form-control"
+                  style={{ fontFamily: "monospace", fontWeight: 600 }}
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Montant Transactionnel :</label>
+                <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                  Montant Transaction (XOF) :
+                </label>
                 <input
                   type="number"
                   value={form.amount}
                   onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
-                  className="w-full font-mono rounded border border-slate-700 bg-slate-950 p-2 text-amber-400 focus:border-indigo-500 focus:outline-none"
+                  className="form-control"
+                  style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--burgundy)" }}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.6rem" }}>
               <div>
-                <label className="block text-slate-400 mb-1">Devise (DE 49) :</label>
+                <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                  Devise (DE 49) :
+                </label>
                 <input
                   type="text"
                   value={form.currency}
                   onChange={(e) => setForm({ ...form, currency: e.target.value })}
-                  className="w-full font-mono rounded border border-slate-700 bg-slate-950 p-2 text-white focus:border-indigo-500 focus:outline-none"
+                  className="form-control"
+                  style={{ fontFamily: "monospace" }}
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Code PIN :</label>
+                <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                  Code PIN :
+                </label>
                 <input
                   type="password"
                   maxLength={4}
                   value={form.pin}
                   onChange={(e) => setForm({ ...form, pin: e.target.value })}
-                  className="w-full font-mono rounded border border-slate-700 bg-slate-950 p-2 text-white focus:border-indigo-500 focus:outline-none"
+                  className="form-control"
+                  style={{ fontFamily: "monospace", textAlign: "center" }}
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">DE 39 Attendu :</label>
+                <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                  DE 39 Attendu :
+                </label>
                 <input
                   type="text"
                   maxLength={2}
                   value={form.expected_de39}
                   onChange={(e) => setForm({ ...form, expected_de39: e.target.value })}
-                  className="w-full font-mono font-bold text-center rounded border border-slate-700 bg-slate-950 p-2 text-indigo-400 focus:border-indigo-500 focus:outline-none"
+                  className="form-control"
+                  style={{ fontFamily: "monospace", fontWeight: 800, textAlign: "center", color: "var(--burgundy)", backgroundColor: "#fdf2f5" }}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1">
-                Surcharges de Données (JSON DE 43, 48, 55...) :
+              <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                Surcharges de Champs ISO (Format JSON DE 43, 48, 55...) :
               </label>
               <textarea
                 rows={3}
                 value={form.field_overrides_raw}
                 onChange={(e) => setForm({ ...form, field_overrides_raw: e.target.value })}
-                className="w-full font-mono text-xs rounded border border-slate-700 bg-slate-950 p-2 text-emerald-400 focus:border-indigo-500 focus:outline-none"
+                className="form-control"
+                style={{ fontFamily: "monospace", fontSize: "0.78rem", backgroundColor: "#0f172a", color: "#38bdf8", border: "1px solid #334155" }}
               />
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1">Intitulé de la Campagne d'Homologation :</label>
+              <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                Intitulé de la Campagne d'Homologation :
+              </label>
               <input
                 type="text"
                 value={campaignName}
                 onChange={(e) => setCampaignName(e.target.value)}
-                className="w-full rounded border border-slate-700 bg-slate-950 p-2 text-slate-300 focus:border-indigo-500 focus:outline-none"
+                className="form-control"
+                style={{ fontSize: "0.82rem" }}
               />
             </div>
 
             <button
+              type="button"
               onClick={handleRunScenario}
               disabled={loading}
-              className="w-full py-2.5 text-xs font-bold uppercase tracking-wider text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-lg shadow-indigo-600/30 transition disabled:opacity-50"
+              className="btn btn-primary btn-glow btn-block"
+              style={{ marginTop: "0.5rem", padding: "0.75rem" }}
             >
-              {loading ? "Exécution du Scénario..." : "🚀 Exécuter le Cas de Test"}
+              {loading ? "Exécution du Scénario en cours..." : "🚀 Exécuter le Cas de Test Unitaire"}
             </button>
           </div>
         </div>
 
-        {/* RESULTS RIGHT */}
-        <div className="lg:col-span-7 space-y-4">
-          {/* STATS STRIP */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-center">
-              <span className="text-[11px] uppercase tracking-wider text-slate-400">Total Exécutés</span>
-              <p className="font-mono text-xl font-bold text-white mt-0.5">{results.length}</p>
+        {/* COLONNE DROITE : SYNTHÈSE DES STATS ET RÉSULTATS */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          {/* STATS RIBBON */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem" }}>
+            <div className="card" style={{ padding: "0.85rem 1rem", textAlign: "center" }}>
+              <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Total Exécutés
+              </span>
+              <div style={{ fontSize: "1.7rem", fontWeight: 800, color: "var(--text-main)", marginTop: "0.2rem" }}>
+                {results.length}
+              </div>
             </div>
-            <div className="rounded-xl border border-emerald-900/40 bg-emerald-950/20 p-3 text-center">
-              <span className="text-[11px] uppercase tracking-wider text-emerald-400">Succès (PASS)</span>
-              <p className="font-mono text-xl font-bold text-emerald-400 mt-0.5">{passedCount}</p>
+
+            <div className="card" style={{ padding: "0.85rem 1rem", textAlign: "center", background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+              <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#166534", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Conformes (PASS)
+              </span>
+              <div style={{ fontSize: "1.7rem", fontWeight: 800, color: "#15803d", marginTop: "0.2rem" }}>
+                {passedCount}
+              </div>
             </div>
-            <div className="rounded-xl border border-red-900/40 bg-red-950/20 p-3 text-center">
-              <span className="text-[11px] uppercase tracking-wider text-red-400">Échecs (FAIL)</span>
-              <p className="font-mono text-xl font-bold text-red-400 mt-0.5">{failedCount}</p>
+
+            <div className="card" style={{ padding: "0.85rem 1rem", textAlign: "center", background: "#fef2f2", border: "1px solid #fecaca" }}>
+              <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#991b1b", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Non Conformes (FAIL)
+              </span>
+              <div style={{ fontSize: "1.7rem", fontWeight: 800, color: "#b91c1c", marginTop: "0.2rem" }}>
+                {failedCount}
+              </div>
             </div>
           </div>
 
-          {/* RESULTS TABLE */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-white border-b border-slate-800 pb-2">
-              📊 Journal des Tests de la Session ({results.length})
-            </h2>
+          {/* TABLEAU / JOURNAL DES TESTS */}
+          <div className="card">
+            <div className="card-header">
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-main)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span>📊</span>
+                <span>Journal des Épreuves de la Session ({results.length})</span>
+              </h3>
+              <span className="tag">{results.length > 0 ? "Campagne Active" : "En attente"}</span>
+            </div>
 
-            {results.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate-500">
-                Aucun test exécuté pour le moment. Renseignez le formulaire ou cliquez sur un modèle pour démarrer.
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
-                {results.map((r, idx) => (
-                  <div
-                    key={idx}
-                    className={`rounded-lg border p-3 text-xs transition ${
-                      r.passed
-                        ? "border-emerald-500/30 bg-emerald-950/10 hover:border-emerald-500/50"
-                        : "border-red-500/30 bg-red-950/10 hover:border-red-500/50"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
-                            r.passed
-                              ? "bg-emerald-900/50 text-emerald-300 border border-emerald-700/50"
-                              : "bg-red-900/50 text-red-300 border border-red-700/50"
-                          }`}
-                        >
-                          {r.test_verdict}
-                        </span>
-                        <span className="font-semibold text-white">{r.scenario_name}</span>
-                        <span className="text-[10px] text-slate-400 font-mono">[{r.channel} • MTI {r.mti}]</span>
-                      </div>
-                      <span className="font-mono text-[10px] text-slate-500">{r.timestamp}</span>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 pt-2 border-t border-slate-800/60 font-mono text-[11px]">
-                      <div>
-                        <span className="text-slate-500 block text-[10px]">Carte :</span>
-                        <span className="text-slate-300">{r.pan_masked}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[10px]">Montant :</span>
-                        <span className="text-amber-400">{r.amount.toLocaleString()} XOF</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[10px]">Attendu / Obtenu :</span>
-                        <span className="text-slate-300">DE {r.expected_de39} ➔ </span>
-                        <strong className={r.passed ? "text-emerald-400" : "text-red-400"}>
-                          DE {r.obtained_de39}
-                        </strong>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[10px]">Règle Active :</span>
-                        <span className="text-indigo-300 truncate block" title={r.rule_triggered}>
-                          {r.rule_triggered}
-                        </span>
-                      </div>
-                    </div>
+            <div style={{ padding: "1rem" }}>
+              {results.length === 0 ? (
+                <div style={{ padding: "3rem 1rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.82rem" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📋</div>
+                  <div>Aucun cas de test n'a encore été exécuté dans cette session.</div>
+                  <div style={{ fontSize: "0.75rem", marginTop: "0.3rem" }}>
+                    Sélectionnez un modèle rapide ci-dessus ou configurez votre scénario à gauche, puis cliquez sur <strong>Exécuter</strong>.
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxHeight: "520px", overflowY: "auto" }}>
+                  {results.map((r, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: "0.85rem",
+                        borderRadius: "8px",
+                        border: r.passed ? "1px solid #bbf7d0" : "1px solid #fecaca",
+                        background: r.passed ? "#f8fafc" : "#fff5f5",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <span className={`verdict-pill ${r.passed ? "pass" : "fail"}`}>
+                            {r.test_verdict}
+                          </span>
+                          <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-main)" }}>
+                            {r.scenario_name}
+                          </span>
+                          <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "monospace" }}>
+                            [{r.channel} • MTI {r.mti}]
+                          </span>
+                        </div>
+                        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "monospace" }}>
+                          {r.timestamp}
+                        </span>
+                      </div>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1.3fr", gap: "0.5rem", fontSize: "0.75rem", borderTop: "1px solid #f1f5f9", paddingTop: "0.4rem" }}>
+                        <div>
+                          <span style={{ color: "var(--text-muted)", display: "block", fontSize: "0.68rem" }}>Carte :</span>
+                          <span style={{ fontFamily: "monospace", fontWeight: 600 }}>{r.pan_masked}</span>
+                        </div>
+                        <div>
+                          <span style={{ color: "var(--text-muted)", display: "block", fontSize: "0.68rem" }}>Montant :</span>
+                          <span style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--burgundy)" }}>
+                            {r.amount.toLocaleString()} XOF
+                          </span>
+                        </div>
+                        <div>
+                          <span style={{ color: "var(--text-muted)", display: "block", fontSize: "0.68rem" }}>Attendu / Obtenu :</span>
+                          <span style={{ fontFamily: "monospace" }}>
+                            DE {r.expected_de39} ➔ <strong style={{ color: r.passed ? "#15803d" : "#b91c1c" }}>DE {r.obtained_de39}</strong>
+                          </span>
+                        </div>
+                        <div>
+                          <span style={{ color: "var(--text-muted)", display: "block", fontSize: "0.68rem" }}>Règle Arbitrage :</span>
+                          <span style={{ color: "var(--burgundy)", fontWeight: 600, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.rule_triggered}>
+                            {r.rule_triggered}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* PV MODAL / PREVIEW */}
+      {/* MODALE PREVIEW DU PV OFFICIEL D'HOMOLOGATION */}
       {pvReport && (
-        <div className="rounded-xl border border-emerald-500/40 bg-slate-900/90 p-5 space-y-4 shadow-2xl">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="card" style={{ border: "2px solid var(--burgundy)", boxShadow: "0 10px 25px rgba(0,0,0,0.15)" }}>
+          <div className="card-header" style={{ background: "linear-gradient(135deg, #7d1538 0%, #a01e4a 100%)", color: "#ffffff" }}>
             <div>
-              <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-400 border border-emerald-500/30">
-                Document Officiel de Certification
-              </span>
-              <h3 className="mt-1 text-base font-bold text-white">
+              <div style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "1px", opacity: 0.9 }}>
+                Certification Officielle de Qualification
+              </div>
+              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "#ffffff", marginTop: "0.1rem" }}>
                 📄 Procès-Verbal de Recette Monétique — {pvReport.campaign_name}
               </h3>
             </div>
-            <div className="flex items-center gap-2">
+            <div style={{ display: "flex", gap: "0.5rem" }}>
               <button
+                type="button"
                 onClick={downloadPv}
-                className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow transition flex items-center gap-2"
+                className="btn btn-primary btn-glow"
+                style={{ backgroundColor: "#ffffff", color: "var(--burgundy)", borderColor: "#ffffff", fontSize: "0.8rem" }}
               >
                 💾 Télécharger le PV (.md)
               </button>
               <button
+                type="button"
                 onClick={() => setPvReport(null)}
-                className="px-3 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 rounded transition"
+                className="btn btn-outline"
+                style={{ color: "#ffffff", borderColor: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}
               >
                 Fermer
               </button>
             </div>
           </div>
 
-          <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 max-h-96 overflow-y-auto">
-            <pre className="font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
+          <div style={{ padding: "1.25rem", background: "#0f172a", maxHeight: "400px", overflowY: "auto" }}>
+            <pre style={{ fontFamily: "monospace", fontSize: "0.78rem", color: "#e2e8f0", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
               {pvReport.markdown}
             </pre>
           </div>

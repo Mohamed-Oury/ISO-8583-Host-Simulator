@@ -74,83 +74,87 @@ export default function CbsGateway() {
   const selectedAccount = accounts.find((a) => a.account_id === selectedAccountId);
 
   return (
-    <div className="space-y-6">
-      {/* HEADER */}
-      <div className="rounded-xl border border-slate-700/60 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 p-6 shadow-xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="rounded bg-indigo-500/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-indigo-400 border border-indigo-500/30">
-                Core Banking System & Comptabilité
-              </span>
-              <span className="text-xs text-slate-400">Écritures en Partie Double</span>
-            </div>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              <span>🏛️</span> Passerelle CBS & Grand Livre Comptable
-            </h1>
-            <p className="mt-1 text-sm text-slate-300 max-w-3xl">
-              Simulation temps réel de l'intégration monétique vers le Core Banking System (CBS).
-              Gérez les <strong>mises en réserve de provisions (Holds 0100)</strong>, les <strong>débits fermes (0200)</strong> et les
-              <strong> extournes (0400)</strong> avec génération automatique des écritures comptables au Grand Livre.
-            </p>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      {/* HEADER PRINCIPAL */}
+      <div className="pane-header">
+        <div className="pane-header-main">
+          <div className="pane-title-row">
+            <span className="badge-chip highlight">CORE BANKING SYSTEM (CBS)</span>
+            <span className="badge-chip subtle">COMPTABILITÉ EN PARTIE DOUBLE</span>
+            <span className="badge-chip success">HOLDS 0100 • DÉBITS 0200 • EXTURNES 0400</span>
           </div>
-
+          <h2 className="pane-title">Passerelle Core Banking (CBS) &amp; Grand Livre Comptable</h2>
+          <p className="pane-subtitle">
+            Simulation temps réel de l'intégration monétique vers le Core Banking System (CBS).
+            Gérez les <strong>mises en réserve de provisions (Holds 0100)</strong>, les <strong>débits fermes (0200)</strong> et les
+            <strong> extournes (0400)</strong> avec génération automatique des écritures comptables équilibrées au Grand Livre.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
           <button
+            type="button"
             onClick={loadData}
             disabled={fetching}
-            className="self-start md:self-center px-4 py-2 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition flex items-center gap-2"
+            className="btn btn-outline"
+            style={{ fontSize: "0.82rem" }}
           >
-            🔄 Actualiser le Solde
+            {fetching ? "Chargement..." : "🔄 Actualiser le Solde"}
           </button>
         </div>
       </div>
 
       {errorMsg && (
-        <div className="rounded-lg border border-red-500/40 bg-red-950/40 p-4 text-sm text-red-200 flex items-center gap-2">
+        <div style={{ padding: "0.75rem 1rem", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", color: "#991b1b", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <span>⚠️</span>
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* CBS ACCOUNTS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* GRILLE DES COMPTES CBS */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem" }}>
         {accounts.map((acc) => {
           const isSelected = acc.account_id === selectedAccountId;
           return (
             <div
               key={acc.account_id}
               onClick={() => setSelectedAccountId(acc.account_id)}
-              className={`cursor-pointer rounded-xl border p-4 transition-all duration-200 shadow-md ${
-                isSelected
-                  ? "border-indigo-500 bg-indigo-950/30 ring-2 ring-indigo-500/40"
-                  : "border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-900"
-              }`}
+              className="card"
+              style={{
+                cursor: "pointer",
+                padding: "1rem",
+                transition: "all 0.2s ease",
+                border: isSelected ? "2px solid var(--burgundy)" : "1px solid var(--border-subtle)",
+                background: isSelected ? "linear-gradient(180deg, #fff1f2 0%, #ffffff 100%)" : "#ffffff",
+                boxShadow: isSelected ? "0 4px 12px rgba(125, 21, 56, 0.12)" : "0 1px 3px rgba(0,0,0,0.04)",
+              }}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
+                <span className="tag" style={{ fontFamily: "monospace", fontSize: "0.68rem" }}>
                   {acc.account_id}
                 </span>
-                <span className="text-xs font-semibold text-slate-400">
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 600 }}>
                   {acc.type === "CLIENT" ? "👤 Compte Client" : "🏢 Compte Interne"}
                 </span>
               </div>
 
-              <h3 className="mt-2 text-sm font-bold text-white truncate">{acc.name}</h3>
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-main)", marginBottom: "0.5rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {acc.name}
+              </h3>
 
-              <div className="mt-3 pt-3 border-t border-slate-800/80 space-y-1.5 font-mono text-xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Solde Comptable :</span>
-                  <span className="text-slate-200">{acc.accounting_balance.toLocaleString()} XOF</span>
+              <div style={{ paddingTop: "0.5rem", borderTop: "1px solid #f1f5f9", display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: "0.75rem", fontFamily: "monospace" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "var(--text-muted)" }}>Solde Comptable :</span>
+                  <span style={{ fontWeight: 600, color: "var(--text-soft)" }}>{acc.accounting_balance.toLocaleString()} XOF</span>
                 </div>
                 {acc.holds > 0 && (
-                  <div className="flex justify-between text-amber-400">
-                    <span>Provision Bloquée (Hold) :</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", color: "#b45309" }}>
+                    <span>Hold / Réservé :</span>
                     <span>-{acc.holds.toLocaleString()} XOF</span>
                   </div>
                 )}
-                <div className="flex justify-between pt-1 border-t border-slate-800 text-sm font-bold">
-                  <span className="text-slate-300">Disponible :</span>
-                  <span className="text-emerald-400">{acc.available_balance.toLocaleString()} XOF</span>
+                <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "0.3rem", borderTop: "1px solid #f1f5f9", fontSize: "0.82rem" }}>
+                  <span style={{ fontWeight: 700, color: "var(--text-main)" }}>Disponible :</span>
+                  <strong style={{ color: "var(--burgundy)" }}>{acc.available_balance.toLocaleString()} XOF</strong>
                 </div>
               </div>
             </div>
@@ -158,55 +162,52 @@ export default function CbsGateway() {
         })}
       </div>
 
-      {/* OPERATIONS & GRAND LIVRE */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* INTERACTIVE OPERATION FORM */}
-        <div className="lg:col-span-5 rounded-xl border border-slate-800 bg-slate-900/80 p-5 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
-              ⚡ Actionner le CBS
-            </h2>
-            {selectedAccount && (
-              <span className="text-xs font-mono text-slate-400">
-                Cible : <strong className="text-white">{selectedAccount.account_id}</strong>
+      {/* FORMULAIRE D'ACTION & GRAND LIVRE EN 2 COLONNES */}
+      <div style={{ display: "grid", gridTemplateColumns: "1.05fr 1.35fr", gap: "1.25rem", alignItems: "start" }}>
+        {/* COLONNE GAUCHE : ACTIONNER LE CBS */}
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-main)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span>⚡</span>
+                <span>Actionner le Core Banking (CBS)</span>
+              </h3>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                Émission d'instructions monétiques directes
               </span>
+            </div>
+            {selectedAccount && (
+              <span className="tag" style={{ fontFamily: "monospace" }}>{selectedAccount.account_id}</span>
             )}
           </div>
 
-          <div className="space-y-3 text-xs">
+          <div style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div>
-              <label className="block text-slate-400 mb-1">Type d'Opération Monétique :</label>
-              <div className="grid grid-cols-3 gap-2">
+              <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.4rem" }}>
+                Type d'Opération Monétique :
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem" }}>
                 <button
                   type="button"
                   onClick={() => setOperationType("HOLD")}
-                  className={`py-2 rounded font-semibold transition border ${
-                    operationType === "HOLD"
-                      ? "bg-amber-600/30 text-amber-300 border-amber-500"
-                      : "bg-slate-800 text-slate-400 border-slate-700 hover:text-white"
-                  }`}
+                  className={`btn ${operationType === "HOLD" ? "btn-primary btn-glow" : "btn-outline"}`}
+                  style={{ fontSize: "0.75rem", padding: "0.5rem" }}
                 >
                   🔒 Hold (0100)
                 </button>
                 <button
                   type="button"
                   onClick={() => setOperationType("DEBIT")}
-                  className={`py-2 rounded font-semibold transition border ${
-                    operationType === "DEBIT"
-                      ? "bg-emerald-600/30 text-emerald-300 border-emerald-500"
-                      : "bg-slate-800 text-slate-400 border-slate-700 hover:text-white"
-                  }`}
+                  className={`btn ${operationType === "DEBIT" ? "btn-primary btn-glow" : "btn-outline"}`}
+                  style={{ fontSize: "0.75rem", padding: "0.5rem" }}
                 >
                   💳 Débit (0200)
                 </button>
                 <button
                   type="button"
                   onClick={() => setOperationType("REVERSAL")}
-                  className={`py-2 rounded font-semibold transition border ${
-                    operationType === "REVERSAL"
-                      ? "bg-red-600/30 text-red-300 border-red-500"
-                      : "bg-slate-800 text-slate-400 border-slate-700 hover:text-white"
-                  }`}
+                  className={`btn ${operationType === "REVERSAL" ? "btn-danger" : "btn-outline"}`}
+                  style={{ fontSize: "0.75rem", padding: "0.5rem" }}
                 >
                   🔄 Extourne (0400)
                 </button>
@@ -214,125 +215,148 @@ export default function CbsGateway() {
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1">Compte Cible Sélectionné :</label>
+              <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                Compte Bancaire Cible :
+              </label>
               <select
                 value={selectedAccountId}
                 onChange={(e) => setSelectedAccountId(e.target.value)}
-                className="w-full rounded border border-slate-700 bg-slate-950 p-2 font-mono text-white focus:border-indigo-500 focus:outline-none"
+                className="form-control"
+                style={{ fontFamily: "monospace", fontSize: "0.82rem" }}
               >
                 {accounts.map((acc) => (
                   <option key={acc.account_id} value={acc.account_id}>
-                    {acc.account_id} - {acc.name} (Dispo: {acc.available_balance.toLocaleString()} XOF)
+                    {acc.account_id} — {acc.name} (Dispo: {acc.available_balance.toLocaleString()} XOF)
                   </option>
                 ))}
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
               <div>
-                <label className="block text-slate-400 mb-1">Montant Opérationnel (XOF) :</label>
+                <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                  Montant Opérationnel (XOF) :
+                </label>
                 <input
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(Number(e.target.value))}
-                  className="w-full font-mono rounded border border-slate-700 bg-slate-950 p-2 text-amber-400 focus:border-indigo-500 focus:outline-none"
+                  className="form-control"
+                  style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--burgundy)" }}
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">Canal Transactionnel :</label>
+                <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", display: "block", marginBottom: "0.3rem" }}>
+                  Canal Monétique :
+                </label>
                 <select
                   value={channel}
                   onChange={(e) => setChannel(e.target.value)}
-                  className="w-full rounded border border-slate-700 bg-slate-950 p-2 text-white focus:border-indigo-500 focus:outline-none"
+                  className="form-control"
                 >
-                  <option value="ATM">GAB / ATM</option>
-                  <option value="POS">TPE / POS</option>
-                  <option value="ECOM">E-Commerce</option>
+                  <option value="ATM">🏧 GAB / ATM</option>
+                  <option value="POS">💳 TPE / POS</option>
+                  <option value="ECOM">🌐 E-Commerce</option>
                 </select>
               </div>
             </div>
 
             <button
+              type="button"
               onClick={handleExecute}
               disabled={loading}
-              className="w-full py-2.5 text-xs font-bold uppercase tracking-wider text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-lg shadow-indigo-600/30 transition disabled:opacity-50"
+              className="btn btn-primary btn-glow btn-block"
+              style={{ marginTop: "0.5rem", padding: "0.75rem" }}
             >
-              {loading ? "Traitement bancaire..." : "Envoyer l'Instruction au CBS"}
+              {loading ? "Comptabilisation en cours..." : "Transmettre l'Instruction au CBS"}
             </button>
-          </div>
 
-          {/* LAST OPERATION RESULT BANNER */}
-          {lastOpResult && (
-            <div className="rounded-lg border border-indigo-500/30 bg-indigo-950/20 p-3 space-y-1 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-indigo-300">
-                  {lastOpResult.success ? "✓ Succès de l'Opération CBS" : "✗ Rejet CBS"}
-                </span>
-                <span className="font-mono text-slate-400">STAN: {lastOpResult.stan}</span>
-              </div>
-              <p className="text-slate-300">{lastOpResult.message}</p>
-              {lastOpResult.new_available_balance !== undefined && (
-                <div className="pt-2 border-t border-slate-800 flex justify-between font-mono text-[11px]">
-                  <span className="text-slate-400">Nouveau Solde Dispo :</span>
-                  <span className="text-emerald-400 font-bold">
-                    {lastOpResult.new_available_balance.toLocaleString()} XOF
+            {/* BANNIÈRE RÉSULTAT DERNIÈRE OPÉRATION */}
+            {lastOpResult && (
+              <div style={{ padding: "0.85rem", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: "0.78rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <strong style={{ color: "#15803d" }}>✓ Instruction Comptabilisée avec Succès</strong>
+                  <span style={{ fontFamily: "monospace", color: "var(--text-muted)", fontSize: "0.72rem" }}>
+                    STAN: {lastOpResult.stan}
                   </span>
                 </div>
-              )}
-            </div>
-          )}
+                <div style={{ color: "var(--text-soft)" }}>
+                  Opération <strong>{lastOpResult.operation}</strong> de {lastOpResult.amount?.toLocaleString()} XOF validée.
+                </div>
+                {lastOpResult.new_available !== undefined && (
+                  <div style={{ paddingTop: "0.3rem", borderTop: "1px solid #bbf7d0", display: "flex", justifyContent: "space-between", fontFamily: "monospace" }}>
+                    <span>Nouveau Solde Disponible :</span>
+                    <strong style={{ color: "var(--burgundy)" }}>{lastOpResult.new_available.toLocaleString()} XOF</strong>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* GRAND LIVRE COMPTABLE RIGHT */}
-        <div className="lg:col-span-7 rounded-xl border border-slate-800 bg-slate-900/80 p-5 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+        {/* COLONNE DROITE : GRAND LIVRE COMPTABLE */}
+        <div className="card">
+          <div className="card-header">
             <div>
-              <h2 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
-                📑 Grand Livre Comptable (General Ledger)
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Écritures en partie double passées en temps réel par les transactions ISO 8583.
-              </p>
+              <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-main)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span>📑</span>
+                <span>Grand Livre Comptable (General Ledger)</span>
+              </h3>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                Écritures en partie double passées en temps réel par les transactions monétiques
+              </span>
             </div>
-            <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-900/50 text-emerald-300 border border-emerald-700/50">
+            <span className="badge-chip success" style={{ fontSize: "0.68rem" }}>
               Équilibré (Débit = Crédit)
             </span>
           </div>
 
-          <div className="max-h-[460px] overflow-y-auto">
+          <div style={{ padding: "1rem" }}>
             {ledger.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate-500">
-                Aucune écriture comptable enregistrée dans cette session.
+              <div style={{ padding: "3rem 1rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.82rem" }}>
+                <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📑</div>
+                <div>Aucune écriture comptable enregistrée dans cette session.</div>
+                <div style={{ fontSize: "0.75rem", marginTop: "0.3rem" }}>
+                  Déclenchez une opération à gauche ou simulez un retrait GAB pour passer des écritures.
+                </div>
               </div>
             ) : (
-              <table className="w-full text-left font-mono text-xs">
-                <thead>
-                  <tr className="border-b border-slate-800 text-[10px] uppercase text-slate-400">
-                    <th className="py-2">Heure / STAN</th>
-                    <th className="py-2">Libellé</th>
-                    <th className="py-2">Compte Débit</th>
-                    <th className="py-2">Compte Crédit</th>
-                    <th className="py-2 text-right">Montant (XOF)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {ledger.map((entry) => (
-                    <tr key={entry.entry_id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-2 text-slate-400">
-                        <div>{entry.timestamp.slice(11, 19)}</div>
-                        <div className="text-[10px] text-slate-500">{entry.stan}</div>
-                      </td>
-                      <td className="py-2 font-sans font-medium text-white">{entry.label}</td>
-                      <td className="py-2 text-red-400">{entry.debit_account}</td>
-                      <td className="py-2 text-emerald-400">{entry.credit_account}</td>
-                      <td className="py-2 text-right font-bold text-amber-400">
-                        {entry.amount.toLocaleString()}
-                      </td>
+              <div className="table-container-enhanced" style={{ maxHeight: "480px", overflowY: "auto" }}>
+                <table className="data-table-enhanced" style={{ fontSize: "0.75rem" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: "95px" }}>Heure / STAN</th>
+                      <th>Libellé de l'Écriture</th>
+                      <th>Compte Débité</th>
+                      <th>Compte Crédité</th>
+                      <th style={{ textAlign: "right" }}>Montant (XOF)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {ledger.map((entry) => (
+                      <tr key={entry.entry_id}>
+                        <td style={{ fontFamily: "monospace", color: "var(--text-muted)" }}>
+                          <div>{entry.timestamp.slice(11, 19)}</div>
+                          <div style={{ fontSize: "0.68rem", color: "var(--burgundy)" }}>STAN: {entry.stan}</div>
+                        </td>
+                        <td style={{ fontWeight: 600, color: "var(--text-main)" }}>
+                          {entry.label}
+                        </td>
+                        <td style={{ fontFamily: "monospace", color: "#b91c1c", fontWeight: 600 }}>
+                          {entry.debit_account}
+                        </td>
+                        <td style={{ fontFamily: "monospace", color: "#15803d", fontWeight: 600 }}>
+                          {entry.credit_account}
+                        </td>
+                        <td style={{ textAlign: "right", fontFamily: "monospace", fontWeight: 700, color: "var(--burgundy)" }}>
+                          {entry.amount.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>
