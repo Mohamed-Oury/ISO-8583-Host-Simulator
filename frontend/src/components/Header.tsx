@@ -77,6 +77,26 @@ const TAB_METADATA: Record<TabKey, { title: string; category: string; badge: str
     category: "Expertise & Outils",
     badge: "GIM-UEMOA • Core Banking",
   },
+  logs_analyzer: {
+    title: "Analyseur Intelligent de Logs & Forensic NOC",
+    category: "Exploitation & Recette",
+    badge: "Corrélation Sessions • Diagnostics",
+  },
+  profiles: {
+    title: "Profils Réseaux Multi-Dialectes ISO 8583",
+    category: "Expertise & Protocoles",
+    badge: "GIM-UEMOA • VISA • Mastercard",
+  },
+  builder: {
+    title: "Studio de Recette & PV d'Homologation Certifié",
+    category: "Exploitation & Recette",
+    badge: "Visa Ingénierie • UAT",
+  },
+  cbs: {
+    title: "Passerelle CBS & Grand Livre Comptable",
+    category: "Core Banking & Comptabilité",
+    badge: "Partie Double • Holds 0100",
+  },
 };
 
 export default function Header({ activeTab, status, onRefresh }: HeaderProps) {

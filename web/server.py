@@ -41,6 +41,10 @@ from core.packet_replay import PacketDissector, PacketReplayer
 from core.clearing import ClearingEngine, CLEARING_DIR
 from core.hsm_crypto import hsm_engine, HSMCryptoEngine
 from core.iso20022 import iso20022_bridge, ISO20022Bridge
+from core.log_analyzer import log_analyzer, ProductionLogAnalyzer
+from core.network_profiles import network_validator, NetworkProfileValidator
+from core.test_builder import test_builder, CustomTestScenarioBuilder
+from core.cbs_mock import cbs_engine, CBSAccountingEngine
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("ISO8583_API")
@@ -695,12 +699,16 @@ def _extract_iso_payload_bytes(raw_input: str, fmt: str = "AUTO") -> bytes:
         except Exception:
             pass
 
-    # 3. Trame ASCII pure commençant par un MTI standard
+    # 3. Trame ASCII pure commençant par un MTI standard (préserve les espaces des champs fixes comme DE 43)
     valid_mtis = ("0100", "0110", "0120", "0130", "0200", "0210", "0220", "0230", "0400", "0410", "0420", "0430", "0800", "0810")
+    if any(text.startswith(m) for m in valid_mtis):
+        return text.encode("ascii", errors="replace")
     if any(compact.startswith(m) for m in valid_mtis):
         return compact.encode("ascii", errors="replace")
 
     # 4. Trame avec cadrage TCP 2-octets suivi d'un MTI ASCII (ex: 004c0200...)
+    if len(text) > 4 and any(text[4:].startswith(m) for m in valid_mtis):
+        return text[4:].encode("ascii", errors="replace")
     if len(compact) > 4 and any(compact[4:].startswith(m) for m in valid_mtis):
         return compact[4:].encode("ascii", errors="replace")
 
@@ -1437,6 +1445,122 @@ async def convert_xml_to_iso8583(req: XmlToIsoRequest):
     """Convertit un document XML ISO 20022 (pacs.008) en champs ISO 8583."""
     res = iso20022_bridge.pacs008_to_iso8583(req.xml_content)
     return res
+
+
+# --- ROUTES ANALYSEUR FORENSIQUE DE LOGS DE PRODUCTION ---
+
+class LogAnalyzeRequest(BaseModel):
+    log_content: str
+
+
+@app.post("/api/logs/analyze")
+async def analyze_production_logs_endpoint(req: LogAnalyzeRequest):
+    """Analyse forensique d'un fichier log ou trace réseau et détection d'anomalies."""
+    return log_analyzer.parse_log_text(req.log_content)
+
+
+# --- ROUTES PROFILS RÉSEAUX MULTI-DIALECTES ---
+
+class ProfileValidateRequest(BaseModel):
+    raw_frame: Optional[str] = None
+    mti: Optional[str] = "0200"
+    profile_id: str = "GIM_UEMOA"
+
+
+@app.get("/api/profiles/list")
+async def list_network_profiles_endpoint():
+    """Liste tous les profils de réseaux bancaires supportés."""
+    return {"profiles": network_validator.list_profiles()}
+
+
+@app.post("/api/profiles/validate")
+async def validate_network_profile_endpoint(req: ProfileValidateRequest):
+    """Valide une trame ISO 8583 par rapport aux spécifications d'un réseau spécifique."""
+    if req.raw_frame:
+        try:
+            payload_bytes = _extract_iso_payload_bytes(req.raw_frame, "AUTO")
+            msg = ISO8583Message.unpack(payload_bytes)
+        except Exception:
+            msg = create_0200_auth(pan="4000123456780001", amount=25000)
+            msg.mti = req.mti or "0200"
+    else:
+        msg = create_0200_auth(pan="4000123456780001", amount=25000)
+        msg.mti = req.mti or "0200"
+
+    return network_validator.validate_message_against_profile(msg, req.profile_id or "GIM_UEMOA")
+
+
+# --- ROUTES STUDIO DE RECETTE & PV D'HOMOLOGATION ---
+
+class CustomScenarioRequest(BaseModel):
+    name: str = "Test Personnalisé"
+    channel: str = "TPE"
+    mti: str = "0200"
+    pan: str = "4000123456780001"
+    amount: int = 25000
+    currency: str = "952"
+    stan: str = "000001"
+    pos_entry_mode: str = "051"
+    pin: str = "1234"
+    expected_de39: str = "00"
+    field_overrides: Optional[Dict[str, str]] = None
+
+
+class PvGenerateRequest(BaseModel):
+    results: List[Dict[str, Any]]
+    campaign_name: Optional[str] = "Campagne de Recette Monétique"
+
+
+@app.post("/api/homologation/scenario-run")
+async def run_custom_scenario_endpoint(req: CustomScenarioRequest):
+    """Exécute un cas de test personnalisé conçu par l'ingénieur monétique."""
+    return test_builder.execute_custom_scenario(req.dict())
+
+
+@app.post("/api/homologation/generate-pv")
+async def generate_pv_report_endpoint(req: PvGenerateRequest):
+    """Génère un Procès-Verbal officiel d'homologation certifié signé par l'architecte."""
+    md = test_builder.generate_pv_report_markdown(req.results, req.campaign_name or "Campagne de Recette")
+    return {
+        "success": True,
+        "campaign_name": req.campaign_name,
+        "markdown": md,
+        "total_tests": len(req.results)
+    }
+
+
+# --- ROUTES PASSERELLE CORE BANKING SYSTEM (CBS) MOCK ---
+
+class CbsOperationRequest(BaseModel):
+    operation: str = "DEBIT"  # HOLD, DEBIT, REVERSAL
+    account_id: str = "1001-CLIENT-0001"
+    amount: int = 25000
+    channel: Optional[str] = "TPE"
+    stan: Optional[str] = "000001"
+
+
+@app.get("/api/cbs/accounts")
+async def get_cbs_accounts_endpoint():
+    """Retourne la situation des comptes du plan comptable CBS."""
+    return {"accounts": cbs_engine.get_accounts()}
+
+
+@app.get("/api/cbs/ledger")
+async def get_cbs_ledger_endpoint():
+    """Retourne le Grand Livre des écritures comptables du CBS."""
+    return {"ledger": cbs_engine.get_ledger()}
+
+
+@app.post("/api/cbs/operation")
+async def execute_cbs_operation_endpoint(req: CbsOperationRequest):
+    """Exécute une écriture comptable en partie double (Hold / Débit / Reversal)."""
+    op = req.operation.upper()
+    if op == "HOLD":
+        return cbs_engine.process_hold(req.account_id, req.amount, req.stan or "000001")
+    elif op == "REVERSAL":
+        return cbs_engine.process_reversal(req.account_id, req.amount, req.stan or "000001")
+    else:
+        return cbs_engine.process_debit(req.account_id, req.amount, req.channel or "TPE", req.stan or "000001")
 
 
 @app.websocket("/ws")

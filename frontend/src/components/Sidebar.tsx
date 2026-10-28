@@ -6,7 +6,24 @@ import { useRouter, usePathname } from "next/navigation";
 import { UserSession, clearUserSession } from "@/lib/auth";
 import { SystemStatus, startServer, stopServer, resetAccounts } from "@/lib/api";
 
-export type TabKey = "suite" | "simulator" | "chaos" | "accounts" | "loadtest" | "logs" | "rules" | "users" | "replay" | "clearing" | "decoder" | "crypto" | "iso20022";
+export type TabKey =
+  | "suite"
+  | "simulator"
+  | "chaos"
+  | "accounts"
+  | "loadtest"
+  | "logs"
+  | "rules"
+  | "users"
+  | "replay"
+  | "clearing"
+  | "decoder"
+  | "crypto"
+  | "iso20022"
+  | "logs_analyzer"
+  | "profiles"
+  | "builder"
+  | "cbs";
 
 export const TAB_ROUTES: Record<TabKey, string> = {
   suite: "/homologation",
@@ -22,6 +39,10 @@ export const TAB_ROUTES: Record<TabKey, string> = {
   decoder: "/decodeur",
   crypto: "/crypto",
   iso20022: "/iso20022",
+  logs_analyzer: "/analyseur-logs",
+  profiles: "/profils-reseaux",
+  builder: "/recette-builder",
+  cbs: "/cbs-gateway",
 };
 
 interface SidebarProps {
@@ -51,20 +72,23 @@ interface NavSection {
 const MONETIQUE_NAV_SECTIONS: NavSection[] = [
   {
     key: "exploitation",
-    title: "EXPLOITATION",
+    title: "EXPLOITATION & RECETTE",
     icon: "⚡",
     items: [
       { id: "suite", label: "Homologation & UAT (24 Cas)", icon: "⊞", href: "/homologation" },
+      { id: "builder", label: "Studio Recette & PV Certifié", icon: "📋", href: "/recette-builder" },
       { id: "simulator", label: "Simulateur GAB / TPE / Web", icon: "💳", href: "/simulateur" },
       { id: "logs", label: "Supervision NOC & Logs TCP", icon: "🖥️", href: "/supervision" },
+      { id: "logs_analyzer", label: "Analyseur Logs Prod Forensique", icon: "🕵️", href: "/analyseur-logs" },
     ],
   },
   {
     key: "expertise",
-    title: "EXPERTISE & OUTILS",
+    title: "EXPERTISE MONÉTIQUE & PROTOCOLES",
     icon: "🛠️",
     items: [
       { id: "decoder", label: "Décodeur Dynamique ISO", icon: "🔍", href: "/decodeur" },
+      { id: "profiles", label: "Profils Réseaux GIM / VISA", icon: "🌐", href: "/profils-reseaux" },
       { id: "crypto", label: "Studio Crypto & HSM Thales", icon: "🔐", href: "/crypto" },
       { id: "iso20022", label: "Passerelle ISO 20022", icon: "🔄", href: "/iso20022" },
       { id: "chaos", label: "Incidents Prod & Chaos Lab", icon: "🚨", href: "/chaos" },
@@ -74,10 +98,11 @@ const MONETIQUE_NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    key: "referentials",
-    title: "RÉFÉRENTIELS & MYSQL",
-    icon: "🎓",
+    key: "cbs_and_accounting",
+    title: "CORE BANKING & RÉFÉRENTIELS",
+    icon: "🏛️",
     items: [
+      { id: "cbs", label: "Passerelle CBS & Grand Livre", icon: "🏛️", href: "/cbs-gateway" },
       { id: "rules", label: "Référentiel Règles & DE39", icon: "🏷️", href: "/regles" },
       { id: "accounts", label: "Référentiel 50 Cartes (MySQL)", icon: "🗂️", href: "/cartes" },
       { id: "users", label: "Gestion Utilisateurs & RBAC", icon: "👥", href: "/utilisateurs" },
