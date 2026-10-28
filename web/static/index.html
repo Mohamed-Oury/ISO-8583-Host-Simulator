@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ISO 8583 Host Authorization Platform | Banc d'Essai & Homologation</title>
+  <meta name="description" content="Plateforme complète de test et de qualification pour Serveur d'Autorisation Émetteur ISO 8583 : Cadrage TCP 2-octets, Matrice d'Arbitrage, 50 Cartes de Référence et Tests de Charge 100 TPS.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="dark-theme">
+  <!-- Top Navigation & Status Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-box">
+        <div class="chip-icon">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="logo-titles">
+          <div class="logo-badge">NORME BANCAIRE ISO 8583</div>
+          <h1 class="app-title">Host Simulator & Lab d'Homologation</h1>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="server-status-pill" id="server-status-badge">
+        <span class="pulse-dot active"></span>
+        <span class="status-text" id="status-text">TCP 127.0.0.1:5001 • EN LIGNE</span>
+      </div>
+      <div class="pci-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>PCI-DSS CONFORME</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button id="btn-toggle-server" class="btn btn-outline" title="Basculer l'état du serveur TCP">
+        <span class="btn-icon">⚡</span> <span id="btn-server-label">Redémarrer TCP</span>
+      </button>
+      <button id="btn-reset-db" class="btn btn-outline" title="Réinitialiser les 50 comptes">
+        <span class="btn-icon">↺</span> Réinitialiser Comptes
+      </button>
+    </div>
+  </header>
+
+  <!-- KPI Overview Ribbon -->
+  <section class="kpi-ribbon">
+    <div class="kpi-card" id="kpi-total-tx">
+      <div class="kpi-icon">📊</div>
+      <div class="kpi-info">
+        <div class="kpi-label">Transactions Traitées</div>
+        <div class="kpi-value" id="val-total-tx">0</div>
+        <div class="kpi-sub" id="val-tx-rate">0.0 ms moy.</div>
+      </div>
+    </div>
+
+    <div class="kpi-card success" id="kpi-approvals">
+      <div class="kpi-icon">✓</div>
+      <div class="kpi-info">
+        <div class="kpi-label">Taux d'Approbation (DE 39 = 00)</div>
+        <div class="kpi-value" id="val-approval-rate">100%</div>
+        <div class="kpi-sub"><span id="val-approved-count">0</span> autorisations</div>
+      </div>
+    </div>
+
+    <div class="kpi-card danger" id="kpi-rejections">
+      <div class="kpi-icon">✕</div>
+      <div class="kpi-info">
+        <div class="kpi-label">Refus Arbitrés (R01 à R10)</div>
+        <div class="kpi-value" id="val-rejections-count">0</div>
+        <div class="kpi-sub">Refus déterministes</div>
+      </div>
+    </div>
+
+    <div class="kpi-card info" id="kpi-accounts">
+      <div class="kpi-icon">💳</div>
+      <div class="kpi-info">
+        <div class="kpi-label">Référentiel Actif</div>
+        <div class="kpi-value">50 Cartes</div>
+        <div class="kpi-sub" id="val-pool-balance">25 000 000 FCFA</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tabs Navigation -->
+  <nav class="tabs-nav" id="main-tabs">
+    <button class="tab-btn active" data-tab="tab-suite" id="tab-nav-suite">
+      <span class="tab-badge">10/10</span>
+      <span>🧪 Suite d'Homologation (TC-01 à TC-10)</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-simulator" id="tab-nav-simulator">
+      <span>⚡ Simulateur de Terminal (0800 / 0200 / 0400)</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-accounts" id="tab-nav-accounts">
+      <span>💳 Référentiel des 50 Cartes</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-loadtest" id="tab-nav-loadtest">
+      <span class="tab-pill">100 TPS</span>
+      <span>🚀 Laboratoire de Charge (Étape 04)</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-logs" id="tab-nav-logs">
+      <span class="tab-dot live"></span>
+      <span>📜 Logs & Flux TCP PCI-DSS</span>
+    </button>
+    <button class="tab-btn" data-tab="tab-rules" id="tab-nav-rules">
+      <span>📐 Matrice des 10 Règles</span>
+    </button>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="main-content">
+    
+    <!-- TAB 1: SUITE D'HOMOLOGATION (TC-01 à TC-10) -->
+    <section class="tab-pane active" id="tab-suite">
+      <div class="pane-header">
+        <div>
+          <h2 class="pane-title">Qualification Bancaire Automatisée</h2>
+          <p class="pane-subtitle">Validation unitaire et séquentielle des 10 cas de test d'arbitrage émetteur, du message 0800 (< 100ms) et de l'annulation 0400 via TCP réel.</p>
+        </div>
+        <div class="pane-actions">
+          <button id="btn-run-all-tests" class="btn btn-primary btn-glow">
+            <span class="btn-icon">▶</span> Exécuter les 12 Épreuves d'Homologation
+          </button>
+        </div>
+      </div>
+
+      <!-- Test Suite Summary Banner -->
+      <div class="certification-banner" id="cert-banner">
+        <div class="cert-status">
+          <div class="cert-badge" id="cert-badge-status">PRÊT AU TEST</div>
+          <div class="cert-rate" id="cert-rate-val">--%</div>
+        </div>
+        <div class="cert-details">
+          <div class="cert-metric"><span class="label">Épreuves Totales :</span> <strong id="cert-total">12</strong></div>
+          <div class="cert-metric"><span class="label">Succès :</span> <strong class="text-success" id="cert-passed">0</strong></div>
+          <div class="cert-metric"><span class="label">Échecs :</span> <strong class="text-danger" id="cert-failed">0</strong></div>
+          <div class="cert-metric"><span class="label">Framing TCP :</span> <strong>2-Byte Big-Endian</strong></div>
+        </div>
+      </div>
+
+      <!-- Test Cases Table -->
+      <div class="table-container">
+        <table class="data-table" id="test-cases-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Intitulé & Cas Métier</th>
+              <th>PAN (PCI-DSS)</th>
+              <th>Montant</th>
+              <th>Règle Arbitrée</th>
+              <th>Attendu (DE 39)</th>
+              <th>Obtenu (DE 39)</th>
+              <th>Impact Solde</th>
+              <th>Latence RTT</th>
+              <th>Verdict</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="test-cases-tbody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <!-- TAB 2: SIMULATEUR DE TERMINAL INTERACTIF -->
+    <section class="tab-pane" id="tab-simulator">
+      <div class="pane-header">
+        <div>
+          <h2 class="pane-title">Simulateur de Terminal Électronique de Paiement (TPE)</h2>
+          <p class="pane-subtitle">Générez et injectez des trames ISO 8583 (0800, 0200, 0400) avec analyse en temps réel de l'en-tête TCP 2-octets et des Data Elements.</p>
+        </div>
+        <div class="quick-presets">
+          <span class="presets-label">Préréglages rapides :</span>
+          <button class="preset-btn" data-preset="0800">0800 Echo</button>
+          <button class="preset-btn" data-preset="tc01">TC-01 Nominal</button>
+          <button class="preset-btn" data-preset="tc03">TC-03 Volée (43)</button>
+          <button class="preset-btn" data-preset="tc04">TC-04 Expirée (54)</button>
+          <button class="preset-btn" data-preset="tc05">TC-05 Faux PIN (55)</button>
+          <button class="preset-btn" data-preset="tc07">TC-07 Solde Insuffisant (51)</button>
+          <button class="preset-btn" data-preset="tc09">TC-09 Plafond Jour (65)</button>
+          <button class="preset-btn" data-preset="0400">0400 Reversal (DE 90)</button>
+        </div>
+      </div>
+
+      <div class="simulator-layout">
+        <!-- Formulaire de Saisie TPE -->
+        <div class="sim-panel card">
+          <div class="card-header">
+            <h3>Paramètres de la Demande TPE</h3>
+            <span class="tag">MTI & Champs DE</span>
+          </div>
+          <form id="sim-form" class="sim-form">
+            <div class="form-row">
+              <div class="form-group col-4">
+                <label for="sim-mti">Type de Message (MTI)</label>
+                <select id="sim-mti" class="form-control">
+                  <option value="0200" selected>0200 - Autorisation Financière</option>
+                  <option value="0800">0800 - Test Réseau (Echo)</option>
+                  <option value="0400">0400 - Annulation (Reversal)</option>
+                </select>
+              </div>
+
+              <div class="form-group col-8">
+                <label for="sim-pan">Numéro de Carte (PAN - DE 2)</label>
+                <div class="input-with-select">
+                  <input type="text" id="sim-pan" class="form-control" value="4000123456780001" maxlength="19">
+                  <select id="sim-pan-quick" class="form-control-compact">
+                    <option value="">-- Choisir parmi les 50 --</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-4">
+                <label for="sim-amount">Montant (FCFA - DE 4)</label>
+                <input type="number" id="sim-amount" class="form-control" value="5000" min="1">
+              </div>
+
+              <div class="form-group col-4">
+                <label for="sim-currency">Devise (DE 49)</label>
+                <select id="sim-currency" class="form-control">
+                  <option value="952" selected>952 - FCFA / XOF (Autorisé)</option>
+                  <option value="840">840 - USD (Non autorisé)</option>
+                  <option value="978">978 - EUR (Non autorisé)</option>
+                </select>
+              </div>
+
+              <div class="form-group col-4">
+                <label for="sim-pin">Code Secret PIN (DE 52)</label>
+                <input type="text" id="sim-pin" class="form-control" value="1234" maxlength="4">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-4">
+                <label for="sim-exp">Date Expiration (DE 14 : YYMM)</label>
+                <input type="text" id="sim-exp" class="form-control" value="2812" maxlength="4">
+              </div>
+
+              <div class="form-group col-4">
+                <label for="sim-stan">Audit Number (STAN - DE 11)</label>
+                <input type="text" id="sim-stan" class="form-control" value="000123" maxlength="6">
+              </div>
+
+              <div class="form-group col-4">
+                <label for="sim-terminal">Identifiant Terminal (DE 41)</label>
+                <input type="text" id="sim-terminal" class="form-control" value="TERM0001" maxlength="8">
+              </div>
+            </div>
+
+            <!-- Champ Reversal DE 90 conditionnel -->
+            <div class="form-row" id="group-de90" style="display: none;">
+              <div class="form-group col-12">
+                <label for="sim-de90">DE 90 - Original Data Elements (42 car. pour Reversal 0400)</label>
+                <input type="text" id="sim-de90" class="form-control font-mono" placeholder="MTI(4) + STAN(6) + DateTime(10) + Acq(11) + Fwd(11)">
+                <small class="form-hint">Ex: 020000012310261441000000000000100000000001</small>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary btn-block btn-glow" id="btn-send-sim">
+                <span class="btn-icon">🚀</span> Envoyer la Trame au Serveur TCP
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Visualiseur de Réponse et Décodeur Hexadécimal -->
+        <div class="sim-panel card">
+          <div class="card-header">
+            <h3>Réponse Émetteur & Cadrage TCP</h3>
+            <span class="tag" id="sim-resp-badge">EN ATTENTE</span>
+          </div>
+
+          <div class="resp-banner" id="sim-resp-banner">
+            <div class="resp-code-box">
+              <div class="resp-code" id="resp-code-val">--</div>
+              <div class="resp-label" id="resp-code-label">En attente d'injection</div>
+            </div>
+            <div class="resp-meta">
+              <div><strong>Code Autorisation (DE 38) :</strong> <span id="resp-de38" class="font-mono badge-auth">Aucun</span></div>
+              <div><strong>Latence RTT :</strong> <span id="resp-lat" class="font-mono">-- ms</span></div>
+              <div><strong>Action Terminal :</strong> <span id="resp-action" class="text-muted">Prêt</span></div>
+            </div>
+          </div>
+
+          <!-- Hex & Decoded Fields Inspector -->
+          <div class="inspector-box">
+            <div class="inspector-tabs">
+              <button class="insp-tab active" data-insp="insp-fields">Champs Décryptés (DE)</button>
+              <button class="insp-tab" data-insp="insp-raw">Trame Brute & Header 2-Bytes</button>
+            </div>
+
+            <div class="insp-content" id="insp-fields">
+              <table class="mini-table">
+                <thead>
+                  <tr><th>DE</th><th>Champ</th><th>Valeur</th></tr>
+                </thead>
+                <tbody id="sim-fields-tbody">
+                  <tr><td colspan="3" class="text-center text-muted">Aucune transaction exécutée.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="insp-content" id="insp-raw" style="display: none;">
+              <div class="raw-section">
+                <div class="raw-title">Requête Émise (Header TCP 2-octets Big-Endian inclus) :</div>
+                <pre class="raw-box font-mono" id="raw-req-display">--</pre>
+              </div>
+              <div class="raw-section">
+                <div class="raw-title">Réponse Reçue de l'Émetteur :</div>
+                <pre class="raw-box font-mono" id="raw-resp-display">--</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- TAB 3: RÉFÉRENTIEL DES 50 CARTES -->
+    <section class="tab-pane" id="tab-accounts">
+      <div class="pane-header">
+        <div>
+          <h2 class="pane-title">Référentiel des 50 Cartes & Soldes Bancaires</h2>
+          <p class="pane-subtitle">Visualisez en temps réel les soldes, plafonds, statuts de carte et compteurs de PIN. Cliquez pour modifier ou créditer un compte.</p>
+        </div>
+        <div class="pane-actions">
+          <input type="text" id="search-accounts" class="form-control" placeholder="Rechercher par PAN, Statut..." style="width: 260px;">
+          <button id="btn-refresh-accounts" class="btn btn-outline">Actualiser</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table" id="accounts-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>PAN Masqué (PCI-DSS)</th>
+              <th>Statut</th>
+              <th>Solde Disponible</th>
+              <th>Dépensé 24h / Plafond</th>
+              <th>Plafond Unitaire</th>
+              <th>Faux PIN (Max 3)</th>
+              <th>Exp</th>
+              <th>Notes / Règle Associée</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="accounts-tbody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <!-- TAB 4: LABORATOIRE DE TEST DE CHARGE (ÉTAPE 04) -->
+    <section class="tab-pane" id="tab-loadtest">
+      <div class="pane-header">
+        <div>
+          <h2 class="pane-title">Laboratoire de Qualification Haute Performance (Étape 04)</h2>
+          <p class="pane-subtitle">Injection de charge asynchrone à 100 TPS (Transactions Par Seconde) pendant 120s (12 000 transactions). Calcul des métriques statistiques p50, p95, p99 et vérification des seuils d'homologation bancaire.</p>
+        </div>
+      </div>
+
+      <div class="loadtest-controls card">
+        <div class="controls-grid">
+          <div class="ctrl-group">
+            <label for="lt-tps">Cadence Cible (TPS) : <strong id="val-lt-tps">100</strong></label>
+            <input type="range" id="lt-tps" min="10" max="150" step="10" value="100" class="range-slider">
+          </div>
+
+          <div class="ctrl-group">
+            <label for="lt-duration">Durée du Test : <strong id="val-lt-duration">10 s</strong></label>
+            <div class="duration-presets">
+              <button class="btn btn-sm btn-outline dur-btn" data-dur="5">5s (500 Tx)</button>
+              <button class="btn btn-sm btn-outline dur-btn active" data-dur="10">10s (1 000 Tx)</button>
+              <button class="btn btn-sm btn-outline dur-btn" data-dur="30">30s (3 000 Tx)</button>
+              <button class="btn btn-sm btn-outline dur-btn" data-dur="120">120s (12 000 Tx - Normatif)</button>
+            </div>
+          </div>
+
+          <div class="ctrl-actions">
+            <button id="btn-start-loadtest" class="btn btn-primary btn-glow">
+              <span class="btn-icon">⚡</span> Démarrer le Test de Charge
+            </button>
+            <button id="btn-cancel-loadtest" class="btn btn-danger" style="display: none;">
+              Arrêter le Test
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Progress Indicator -->
+        <div class="loadtest-progress-box" id="lt-progress-box" style="display: none;">
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="lt-progress-bar" style="width: 0%;"></div>
+          </div>
+          <div class="progress-labels">
+            <span id="lt-progress-text">Progression : 0 / 10s (0%)</span>
+            <span id="lt-live-stats">0 Tx envoyées • 0 erreurs</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLA Compliance Grid -->
+      <div class="sla-grid">
+        <div class="sla-card" id="sla-card-p50">
+          <div class="sla-header">
+            <span class="sla-title">Latence Médiane ($p_{50}$)</span>
+            <span class="sla-badge" id="badge-p50">CIBLE &lt; 15 ms</span>
+          </div>
+          <div class="sla-value" id="val-p50">-- ms</div>
+          <div class="sla-desc">50% des transactions traitées sous ce seuil.</div>
+        </div>
+
+        <div class="sla-card" id="sla-card-p95">
+          <div class="sla-header">
+            <span class="sla-title">95ᵉ Centile ($p_{95}$)</span>
+            <span class="sla-badge" id="badge-p95">CIBLE &lt; 30 ms</span>
+          </div>
+          <div class="sla-value" id="val-p95">-- ms</div>
+          <div class="sla-desc">Exclut les 5% de requêtes les plus ralenties.</div>
+        </div>
+
+        <div class="sla-card" id="sla-card-p99">
+          <div class="sla-header">
+            <span class="sla-title">99ᵉ Centile ($p_{99}$)</span>
+            <span class="sla-badge" id="badge-p99">CIBLE &lt; 50 ms</span>
+          </div>
+          <div class="sla-value" id="val-p99">-- ms</div>
+          <div class="sla-desc">Détecte les micro-blocages d'I/O réseau.</div>
+        </div>
+
+        <div class="sla-card" id="sla-card-error">
+          <div class="sla-header">
+            <span class="sla-title">Taux d'Erreur</span>
+            <span class="sla-badge" id="badge-error">CIBLE = 0.00%</span>
+          </div>
+          <div class="sla-value" id="val-error-rate">-- %</div>
+          <div class="sla-desc" id="val-errors-count">Zéro transaction perdue exigée.</div>
+        </div>
+      </div>
+
+      <!-- Official Markdown Audit Report Box -->
+      <div class="audit-report-card card" id="audit-report-card">
+        <div class="card-header">
+          <h3>Rapport d'Audit et de Conformité Monétique (Section 4.3)</h3>
+          <div class="card-header-actions">
+            <button id="btn-copy-report" class="btn btn-sm btn-outline">📋 Copier le Rapport</button>
+            <button id="btn-download-report" class="btn btn-sm btn-outline">💾 Télécharger (.md)</button>
+          </div>
+        </div>
+        <pre class="report-box font-mono" id="report-text">Exécutez un test de charge pour générer le rapport d'homologation certifié.</pre>
+      </div>
+    </section>
+
+
+    <!-- TAB 5: LOGS ET FLUX PCI-DSS -->
+    <section class="tab-pane" id="tab-logs">
+      <div class="pane-header">
+        <div>
+          <h2 class="pane-title">Journal d'Audit & Événements TCP en Temps Réel</h2>
+          <p class="pane-subtitle">Traces complètes des paquets binaires TCP, arbitrage des décisions et masquage PCI-DSS (6 premiers et 4 derniers chiffres).</p>
+        </div>
+        <div class="pane-actions">
+          <button id="btn-clear-logs" class="btn btn-outline">Effacer Logs</button>
+          <label class="toggle-label">
+            <input type="checkbox" id="chk-autoscroll" checked> Défilement auto
+          </label>
+        </div>
+      </div>
+
+      <div class="terminal-card">
+        <div class="terminal-header">
+          <span class="term-dot red"></span>
+          <span class="term-dot yellow"></span>
+          <span class="term-dot green"></span>
+          <span class="term-title">tcp://127.0.0.1:5001 • ISO 8583 Host Stream • Masquage PAN Actif</span>
+        </div>
+        <div class="terminal-body font-mono" id="terminal-logs">
+          <!-- Live events logged here -->
+        </div>
+      </div>
+    </section>
+
+
+    <!-- TAB 6: MATRICE D'ARBITRAGE DES 10 RÈGLES -->
+    <section class="tab-pane" id="tab-rules">
+      <div class="pane-header">
+        <div>
+          <h2 class="pane-title">Matrice Hiérarchique des 10 Règles de Décision</h2>
+          <p class="pane-subtitle">Séquence d'évaluation stricte par court-circuit (short-circuit). La première condition violée arrête immédiatement le traitement et détermine le code DE 39.</p>
+        </div>
+      </div>
+
+      <!-- Flow diagram visualization -->
+      <div class="flow-card card">
+        <div class="flow-diagram">
+          <div class="flow-node start">Requête 0200 Reçue</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-steps">
+            <div class="flow-step"><span class="step-num">1</span> PAN existe dans la base ? <span class="fail-code">NON → DE 39 = 14</span></div>
+            <div class="flow-step"><span class="step-num">2</span> Carte ni volée ni perdue ? <span class="fail-code">NON → DE 39 = 43/41</span></div>
+            <div class="flow-step"><span class="step-num">3</span> Non expirée (DE 14) ? <span class="fail-code">NON → DE 39 = 54</span></div>
+            <div class="flow-step"><span class="step-num">4</span> Compteur PIN &lt; 3 ? <span class="fail-code">NON → DE 39 = 75</span></div>
+            <div class="flow-step"><span class="step-num">5</span> Code PIN correct (DE 52) ? <span class="fail-code">NON → DE 39 = 55 (incrément)</span></div>
+            <div class="flow-step"><span class="step-num">6</span> Devise = 952 (FCFA) ? <span class="fail-code">NON → DE 39 = 58</span></div>
+            <div class="flow-step"><span class="step-num">7</span> Montant &le; Plafond unitaire ? <span class="fail-code">NON → DE 39 = 61</span></div>
+            <div class="flow-step"><span class="step-num">8</span> Cumul 24h + Mt &le; Plafond jour ? <span class="fail-code">NON → DE 39 = 65</span></div>
+            <div class="flow-step"><span class="step-num">9</span> Solde disponible &ge; Montant ? <span class="fail-code">NON → DE 39 = 51</span></div>
+            <div class="flow-step"><span class="step-num">10</span> Statut actif (non suspendu) ? <span class="fail-code">NON → DE 39 = 57</span></div>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-node success">APPROBATION (DE 39 = '00') → DE 38 Alphanumérique + Débit Solde</div>
+        </div>
+      </div>
+
+      <!-- Table of rules -->
+      <div class="table-container">
+        <table class="data-table" id="rules-matrix-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Prio</th>
+              <th>Règle Métier</th>
+              <th>Condition d'Échec</th>
+              <th>Code DE 39</th>
+              <th>Libellé Normatif</th>
+              <th>Comportement Terminal</th>
+            </tr>
+          </thead>
+          <tbody id="rules-tbody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Edit / Credit Modal -->
+  <div class="modal-backdrop" id="modal-account" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-title">Éditer le Compte</h3>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <form id="modal-form" class="modal-body">
+        <input type="hidden" id="modal-pan">
+        <div class="form-group">
+          <label>PAN Masqué :</label>
+          <div id="modal-pan-display" class="font-mono text-muted"></div>
+        </div>
+        <div class="form-group">
+          <label for="modal-balance">Solde Disponible (FCFA) :</label>
+          <input type="number" id="modal-balance" class="form-control" min="0">
+        </div>
+        <div class="form-group">
+          <label for="modal-status">Statut de la Carte :</label>
+          <select id="modal-status" class="form-control">
+            <option value="ACTIVE">ACTIVE - Opérationnelle</option>
+            <option value="STOLEN">STOLEN - Volée (DE 39 = 43)</option>
+            <option value="LOST">LOST - Perdue (DE 39 = 41)</option>
+            <option value="SUSPENDED">SUSPENDED - Suspendue (DE 39 = 57)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="modal-pin-tries">Compteur Faux PIN :</label>
+          <input type="number" id="modal-pin-tries" class="form-control" min="0" max="5">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="modal-cancel-btn">Annuler</button>
+          <button type="submit" class="btn btn-primary">Enregistrer les Modifications</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
