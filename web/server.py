@@ -39,6 +39,8 @@ from tests_suite.test_cases import TestSuiteRunner, TEST_CASES_DEFINITIONS, send
 from tests_suite.load_tester import LoadTester
 from core.packet_replay import PacketDissector, PacketReplayer
 from core.clearing import ClearingEngine, CLEARING_DIR
+from core.hsm_crypto import hsm_engine, HSMCryptoEngine
+from core.iso20022 import iso20022_bridge, ISO20022Bridge
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("ISO8583_API")
@@ -1247,6 +1249,194 @@ async def download_clearing_file(filename: str):
         raise HTTPException(status_code=404, detail="Fichier de compensation non trouvé")
     media_type = "text/csv" if filename.endswith(".csv") else "text/plain"
     return FileResponse(file_path, media_type=media_type, filename=filename)
+
+
+# --- ROUTES CRYPTOGRAPHIE BANCAIRE & ÉMULATEUR HSM THALES ---
+
+class PinBlockRequest(BaseModel):
+    pin: str = "1234"
+    pan: str = "4000123456780001"
+    format: str = "ISO-0"  # ISO-0, ISO-1, ISO-3
+    zpk: Optional[str] = None
+    dest_zpk: Optional[str] = None
+    encrypted_block: Optional[str] = None
+
+
+class CvvRequest(BaseModel):
+    pan: str = "4000123456780001"
+    exp: str = "2812"
+    service_code: str = "101"
+    cvk: Optional[str] = None
+
+
+class ArqcRequest(BaseModel):
+    pan: str = "4000123456780001"
+    pan_seq: str = "01"
+    atc: str = "0042"
+    unpredictable_number: str = "87A14F23"
+    amount_hex: str = "000000025000"
+    tvr: str = "0000000000"
+    arqc_provided: str = "A1B2C3D4E5F67890"
+    arc: str = "00"
+    mk_ac: Optional[str] = None
+
+
+class ThalesCommandRequest(BaseModel):
+    command: str = "NO"
+
+
+@app.post("/api/crypto/pin-block")
+async def calculate_pin_block_endpoint(req: PinBlockRequest):
+    """Calcul, chiffrement et déchiffrement de blocs PIN (ISO-0 ANSI X9.8, ISO-1, ISO-3)."""
+    fmt = (req.format or "ISO-0").upper()
+    zpk = req.zpk or HSMCryptoEngine.DEFAULT_ZPK
+
+    # Mode 1 : Traduction de bloc PIN sous nouvelle ZPK
+    if req.encrypted_block and req.dest_zpk:
+        return hsm_engine.translate_pin_block(
+            enc_pin_block_hex=req.encrypted_block,
+            pan=req.pan,
+            source_zpk_hex=zpk,
+            dest_zpk_hex=req.dest_zpk
+        )
+
+    # Mode 2 : Génération et chiffrement standard
+    if fmt == "ISO-1":
+        clear_block = hsm_engine.format_pin_block_iso1(req.pin)
+    elif fmt == "ISO-3":
+        clear_block = hsm_engine.format_pin_block_iso3(req.pin, req.pan)
+    else:
+        clear_block = hsm_engine.format_pin_block_iso0(req.pin, req.pan)
+
+    encrypted_block = hsm_engine.encrypt_pin_block(clear_block, zpk)
+
+    return {
+        "success": True,
+        "format": fmt,
+        "pin_length": len(req.pin),
+        "pan_masked": mask_pan(req.pan),
+        "clear_pin_block": clear_block,
+        "zpk_used": f"{zpk[:4]}...{zpk[-4:]}",
+        "encrypted_pin_block": encrypted_block,
+        "de52_iso_field": encrypted_block
+    }
+
+
+@app.post("/api/crypto/cvv")
+async def calculate_cvv_endpoint(req: CvvRequest):
+    """Calcul et vérification des valeurs CVV (Piste), CVV2 (E-Com) et iCVV (Puce)."""
+    cvk = req.cvk or HSMCryptoEngine.DEFAULT_CVK
+    res = hsm_engine.calculate_cvv(req.pan, req.exp, req.service_code, cvk)
+    res["pan_masked"] = mask_pan(req.pan)
+    res["cvk_masked"] = f"{cvk[:4]}...{cvk[-4:]}"
+    return res
+
+
+@app.post("/api/crypto/arqc-arpc")
+async def verify_arqc_endpoint(req: ArqcRequest):
+    """Vérification de l'ARQC (Puce EMV DE 55) et calcul de l'ARPC émetteur."""
+    mk_ac = req.mk_ac or HSMCryptoEngine.DEFAULT_MK_AC
+    res = hsm_engine.verify_arqc_and_generate_arpc(
+        pan=req.pan,
+        pan_seq=req.pan_seq,
+        atc=req.atc,
+        unpredictable_number=req.unpredictable_number,
+        amount_hex=req.amount_hex,
+        tvr=req.tvr,
+        arqc_provided=req.arqc_provided,
+        arc=req.arc,
+        mk_ac_hex=mk_ac
+    )
+    res["pan_masked"] = mask_pan(req.pan)
+    return res
+
+
+@app.post("/api/crypto/hsm-command")
+async def execute_thales_hsm_command_endpoint(req: ThalesCommandRequest):
+    """Exécution directe d'une commande Thales payShield 10K (CW, CA, CC, CY, FA, NO)."""
+    return hsm_engine.execute_thales_command(req.command)
+
+
+# --- ROUTES PASSERELLE ISO 8583 <---> ISO 20022 ---
+
+class IsoToXmlRequest(BaseModel):
+    raw_frame: Optional[str] = None
+    mti: Optional[str] = "0200"
+    pan: Optional[str] = "4000123456780001"
+    amount: Optional[int] = 25000
+    currency: Optional[str] = "952"
+    stan: Optional[str] = "000001"
+    de39: Optional[str] = "00"
+    target_msg: str = "pacs.008"
+
+
+class XmlToIsoRequest(BaseModel):
+    xml_content: str
+
+
+@app.get("/api/iso20022/mapping")
+async def get_iso20022_mapping():
+    """Retourne la matrice de correspondance complète ISO 8583 <-> ISO 20022."""
+    return {"mappings": iso20022_bridge.get_mapping_matrix()}
+
+
+@app.post("/api/iso20022/to-xml")
+async def convert_iso8583_to_xml(req: IsoToXmlRequest):
+    """Convertit un message ISO 8583 en document XML ISO 20022 (pacs.008 ou pacs.002)."""
+    # Si une trame brute est passée, on l'unpack
+    if req.raw_frame:
+        try:
+            payload_bytes = _extract_iso_payload_bytes(req.raw_frame, "AUTO")
+            msg = ISO8583Message.unpack(payload_bytes)
+        except Exception:
+            msg = create_0200_auth(
+                pan=req.pan or "4000123456780001",
+                amount=req.amount or 25000,
+                currency=req.currency or "952",
+                stan=req.stan or "000001"
+            )
+            msg.mti = req.mti or "0200"
+            if req.de39:
+                msg.set_field(39, req.de39)
+    else:
+        msg = create_0200_auth(
+            pan=req.pan or "4000123456780001",
+            amount=req.amount or 25000,
+            currency=req.currency or "952",
+            stan=req.stan or "000001"
+        )
+        msg.mti = req.mti or "0200"
+        if req.de39:
+            msg.set_field(39, req.de39)
+
+    target = (req.target_msg or "pacs.008").lower()
+    if target == "pacs.002" or msg.mti in ("0210", "0110", "0410", "0430"):
+        xml_res = iso20022_bridge.iso8583_to_pacs002(msg)
+        schema_type = "pacs.002.001.10 (Payment Status Report)"
+    else:
+        xml_res = iso20022_bridge.iso8583_to_pacs008(msg)
+        schema_type = "pacs.008.001.08 (FI to FI Customer Credit Transfer)"
+
+    return {
+        "success": True,
+        "schema_type": schema_type,
+        "xml": xml_res,
+        "source_iso8583": {
+            "mti": msg.mti,
+            "pan_masked": mask_pan(msg.get_field(2, req.pan or "")),
+            "amount": msg.get_field(4, "0"),
+            "stan": msg.get_field(11, "000001"),
+            "currency": msg.get_field(49, "952"),
+            "de39": msg.get_field(39, req.de39 or "00")
+        }
+    }
+
+
+@app.post("/api/iso20022/from-xml")
+async def convert_xml_to_iso8583(req: XmlToIsoRequest):
+    """Convertit un document XML ISO 20022 (pacs.008) en champs ISO 8583."""
+    res = iso20022_bridge.pacs008_to_iso8583(req.xml_content)
+    return res
 
 
 @app.websocket("/ws")

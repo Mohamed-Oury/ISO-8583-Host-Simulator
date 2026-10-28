@@ -62,6 +62,16 @@ const TAB_METADATA: Record<TabKey, { title: string; category: string; badge: str
     category: "Expertise & Outils",
     badge: "Temps Réel • Wireshark Grade",
   },
+  crypto: {
+    title: "Studio Cryptographique & Émulateur HSM",
+    category: "Expertise & Outils",
+    badge: "Thales payShield 10K • ANSI X9.8",
+  },
+  iso20022: {
+    title: "Passerelle Bi-directionnelle ISO 20022",
+    category: "Expertise & Outils",
+    badge: "pacs.008 • pacs.002 • Instant Payment",
+  },
   clearing: {
     title: "Télécompensation & Rapprochement Bancaire",
     category: "Expertise & Outils",

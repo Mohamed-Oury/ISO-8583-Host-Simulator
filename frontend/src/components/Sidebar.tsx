@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { UserSession, clearUserSession } from "@/lib/auth";
 import { SystemStatus, startServer, stopServer, resetAccounts } from "@/lib/api";
 
-export type TabKey = "suite" | "simulator" | "chaos" | "accounts" | "loadtest" | "logs" | "rules" | "users" | "replay" | "clearing" | "decoder";
+export type TabKey = "suite" | "simulator" | "chaos" | "accounts" | "loadtest" | "logs" | "rules" | "users" | "replay" | "clearing" | "decoder" | "crypto" | "iso20022";
 
 export const TAB_ROUTES: Record<TabKey, string> = {
   suite: "/homologation",
@@ -20,6 +20,8 @@ export const TAB_ROUTES: Record<TabKey, string> = {
   replay: "/rejeu",
   clearing: "/clearing",
   decoder: "/decodeur",
+  crypto: "/crypto",
+  iso20022: "/iso20022",
 };
 
 interface SidebarProps {
@@ -63,6 +65,8 @@ const MONETIQUE_NAV_SECTIONS: NavSection[] = [
     icon: "🛠️",
     items: [
       { id: "decoder", label: "Décodeur Dynamique ISO", icon: "🔍", href: "/decodeur" },
+      { id: "crypto", label: "Studio Crypto & HSM Thales", icon: "🔐", href: "/crypto" },
+      { id: "iso20022", label: "Passerelle ISO 20022", icon: "🔄", href: "/iso20022" },
       { id: "chaos", label: "Incidents Prod & Chaos Lab", icon: "🚨", href: "/chaos" },
       { id: "loadtest", label: "Laboratoire Charge 100 TPS", icon: "⚡", href: "/charge" },
       { id: "replay", label: "Dissecteur & Rejeu Hex/EMV", icon: "🔬", href: "/rejeu" },
